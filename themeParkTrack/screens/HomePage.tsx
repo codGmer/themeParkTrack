@@ -161,21 +161,23 @@ export default class HomePage extends React.Component<
                             >
                                 {item.slug}
                             </Text>
-                            <Text
-                                style={{
-                                    fontSize: 14,
-                                    color: 'white',
-                                    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-                                    textShadowOffset: {
-                                        width: -1,
-                                        height: 1
-                                    },
-                                    textShadowRadius: 10,
-                                    elevation: 22
-                                }}
-                            >
-                                {item.messages.nl[0]}
-                            </Text>
+                            {item.messages !== null ? (
+                                <Text
+                                    style={{
+                                        fontSize: 14,
+                                        color: 'white',
+                                        textShadowColor: 'rgba(0, 0, 0, 0.4)',
+                                        textShadowOffset: {
+                                            width: -1,
+                                            height: 1
+                                        },
+                                        textShadowRadius: 10,
+                                        elevation: 22
+                                    }}
+                                >
+                                    {item.messages.nl[0]}
+                                </Text>
+                            ) : null}
                         </LinearGradient>
                     </View>
                 </ImageBackground>
@@ -214,6 +216,7 @@ export default class HomePage extends React.Component<
                 <FlatList
                     data={this.state.fullRideData}
                     renderItem={this.renderItem}
+                    keyExtractor={(item, index) => item.poiId}
                 />
             </View>
         );
