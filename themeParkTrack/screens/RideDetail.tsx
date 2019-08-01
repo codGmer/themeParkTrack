@@ -20,9 +20,21 @@ import HeaderImageScrollView, {
 import * as Animatable from 'react-native-animatable';
 
 const MIN_HEIGHT = Header.HEIGHT;
-const keyExtractor = item => item.Id;
+const keyExtractor = ride => ride.Id;
 
-export default class RideDetail extends React.Component {
+export default class RideDetail extends React.Component<
+    {},
+    {
+        refreshing: boolean;
+        favoriteCheck: boolean;
+        failed: boolean;
+        userLocation: [];
+        loading: boolean;
+        dataSource: fullRideData[];
+        favorite: [];
+        hidden: false;
+    }
+> {
     navigationOptions: {
         title: '';
     };
@@ -31,13 +43,15 @@ export default class RideDetail extends React.Component {
     constructor(props) {
         super(props);
         this.id = props.navigation.state.params.id;
-        //console.log(props);
         this.state = {
-            userLocation: '',
+            userLocation: [],
             loading: true,
-            dataSource: '',
+            dataSource: [],
             favorite: [],
-            hidden: false
+            hidden: false,
+            failed: false,
+            refreshing: false,
+            favoriteCheck: false
         };
     }
 
@@ -84,16 +98,15 @@ export default class RideDetail extends React.Component {
         return true;
     };
 
-    isFavorite = item => {
-        return this.state.favorite.includes(item.Id);
+    isFavorite = (ride: any) => {
+        return this.state.favorite.includes(ride.Id as never);
     };
 
     _getItemDetails = async (id: number) => {
         let rideTimesDetails = await GetApiData.getRidesTimeDetails(id);
         let rideMetaDataDetails = await GetApiData.getRidesMetaDataDetails(id);
-        await this.setState({ rideTimesDetails, rideMetaDataDetails });
         let fullRideData = { ...rideTimesDetails[0], ...rideMetaDataDetails };
-        this.setState({ dataSource: fullRideData, loading: false });
+        await this.setState({ dataSource: fullRideData, loading: false });
     };
 
     checkFavorite() {
@@ -107,7 +120,7 @@ export default class RideDetail extends React.Component {
                 }
             }
             let favoriteBool = false;
-            if (this.isFavorite(this.state.dataSource)) {
+            if (this.isFavorite(ride)) {
                 favoriteBool = true;
                 this.setState({ favoriteCheck: true });
             } else {
@@ -116,8 +129,7 @@ export default class RideDetail extends React.Component {
             }
 
             this.props.navigation.setParams({
-                favorite: () => this.toggleFav(this.state.dataSource),
-                share: () => this._OnShare(this.state.dataSource),
+                favorite: () => this.toggleFav(ride),
                 favoriteCheck: favoriteBool
             });
         });
@@ -145,14 +157,14 @@ export default class RideDetail extends React.Component {
     }
 
     _calculateDistance = itemList => {
-        if (this.state.userLocation !== '' && itemList.Lat !== '0') {
+        if (this.state.userLocation && itemList.Lat !== '0') {
             let distance = this._calculateDistanceTwoPoints(
                 this.state.userLocation.coords.latitude,
                 this.state.userLocation.coords.longitude,
                 itemList.Lat,
                 itemList.Lng
             );
-            distance !== '' && distance < 200
+            distance && distance < 200
                 ? (itemList.distance = distance)
                 : (itemList.distance = '-');
         } else {
@@ -199,9 +211,9 @@ export default class RideDetail extends React.Component {
         });
     };
 
-    toggleActiveWinItems = item => {
+    toggleActiveWinItems = ride => {
         let activeWinItems = this.state.activeWinItems;
-        const id = item;
+        const id = ride;
         // //console.log('------------------------------')
         this.setState(
             ({ activeWinItems }) => ({
@@ -249,7 +261,7 @@ export default class RideDetail extends React.Component {
                 body: JSON.stringify({
                     action: 'insertActiveWinItemFromUser',
                     userID: userID.UserID,
-                    winItem: this.state.dataSource.Id
+                    winItem: ride.Id
                 })
             })
                 .then(response => response.json())
@@ -286,13 +298,13 @@ export default class RideDetail extends React.Component {
         });
     };
 
-    toggleFav = item => {
+    toggleFav = ride => {
         let favorite = this.state.favorite;
-        const id = keyExtractor(item);
+        const id = keyExtractor(ride);
         //console.log('------------------------------')
         this.setState(
             ({ favorite }) => ({
-                favorite: this.isFavorite(item)
+                favorite: this.isFavorite(ride)
                     ? favorite.filter(a => a !== id)
                     : [...favorite, id]
             }),
@@ -302,7 +314,7 @@ export default class RideDetail extends React.Component {
                         'Favorites',
                         JSON.stringify(this.state.favorite)
                     ).then(() => {
-                        if (this.isFavorite(item)) {
+                        if (this.isFavorite(ride)) {
                             this.props.navigation.setParams({
                                 favoriteCheck: true
                             });
@@ -319,6 +331,7 @@ export default class RideDetail extends React.Component {
     };
 
     render() {
+        const ride = this.state.dataSource;
         if (this.state.loading || this._isMounted == false) {
             return (
                 <View style={[styles.horizontal, styles.container]}>
@@ -337,167 +350,163 @@ export default class RideDetail extends React.Component {
                         renderHeader={() => (
                             <Image
                                 source={{
-                                    uri: this.state.dataSource.titleImage.url
+                                    uri: ride.titleImage.url
                                 }}
                                 style={styles.image}
                             />
                         )}
-                        renderForeground={() => {
-                            <View style={styles.titleContainer}>
-                                <LinearGradient
-                                    colors={['rgba(0,0,0,0.9)', 'transparent']}
-                                    start={{ x: 0, y: 1 }}
-                                    end={{ x: 0, y: 0 }}
+                        renderFixedForeground={() => (
+                            <React.Fragment>
+                                <Text
                                     style={{
-                                        height: 80,
-                                        width: '100%',
-                                        paddingLeft: 10,
-                                        paddingRight: 10,
-                                        paddingBottom: 30
+                                        fontSize: 14,
+                                        color: ride.open ? 'green' : 'red',
+                                        width: 'auto',
+                                        fontWeight: 'bold',
+                                        marginTop: 10,
+                                        backgroundColor: 'black',
+                                        left: 10,
+                                        position: 'absolute',
+                                        padding: 2,
+                                        shadowColor: '#000',
+                                        shadowOffset: {
+                                            width: 0,
+                                            height: 5
+                                        },
+                                        shadowOpacity: 0.34,
+                                        shadowRadius: 6.27,
+                                        elevation: 15
                                     }}
                                 >
-                                    {typeof this.state.dataSource.distance !==
-                                        'undefined' &&
-                                    this.state.dataSource !== '' ? (
-                                        <Text
-                                            style={{
-                                                fontSize: 14,
-                                                color: 'white',
-                                                width: '100%',
-                                                fontWeight: 'bold',
-                                                marginTop: 5,
-                                                backgroundColor: 'black',
-                                                width: 'auto',
-                                                left: 10,
-                                                position: 'absolute',
-                                                padding: 2
-                                            }}
-                                        >
-                                            {this.state.dataSource.distance +
-                                                ' KM'}
-                                        </Text>
-                                    ) : null}
-                                    <Text
+                                    {ride.open ? 'Open' : 'Gesloten'}
+                                </Text>
+                                <Animatable.View
+                                    ref={navTitleView => {
+                                        this.navTitleView = navTitleView;
+                                    }}
+                                    style={
+                                        this.state.hidden
+                                            ? {}
+                                            : {
+                                                  position: 'absolute',
+                                                  bottom: 0,
+                                                  width: '100%'
+                                              }
+                                    }
+                                >
+                                    <LinearGradient
+                                        colors={[
+                                            'rgba(0,0,0,0.9)',
+                                            'transparent'
+                                        ]}
+                                        start={{ x: 0, y: 1 }}
+                                        end={{ x: 0, y: 0 }}
                                         style={{
-                                            fontSize:
-                                                this.state.dataSource.slug
-                                                    .length > 35
-                                                    ? 18
-                                                    : 20,
-                                            marginTop:
-                                                this.state.dataSource.slug !==
-                                                '1'
-                                                    ? 28
-                                                    : 45,
-                                            color: 'white',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        {this.state.dataSource.slug}
-                                    </Text>
-                                    <Text
-                                        style={{
-                                            fontSize: 14,
-                                            color: 'white',
+                                            height: 80,
                                             width: '100%',
-                                            fontWeight: 'bold'
-                                        }}
-                                    />
-                                </LinearGradient>
-                            </View>;
-                        }}
-                        renderFixedForeground={() => (
-                            <Animatable.View
-                                ref={navTitleView => {
-                                    this.navTitleView = navTitleView;
-                                }}
-                                style={
-                                    this.state.hidden
-                                        ? {}
-                                        : {
-                                              position: 'absolute',
-                                              bottom: 0,
-                                              width: '100%'
-                                          }
-                                }
-                            >
-                                <LinearGradient
-                                    colors={['rgba(0,0,0,0.9)', 'transparent']}
-                                    start={{ x: 0, y: 1 }}
-                                    end={{ x: 0, y: 0 }}
-                                    style={{
-                                        height: 80,
-                                        width: '100%',
-                                        paddingLeft: 10,
-                                        paddingRight: 10,
-                                        paddingBottom:
-                                            this.state.dataSource.Locatie !==
-                                                '' ||
-                                            this.state.dataSource.Plaatsnaam !==
-                                                ''
+                                            paddingLeft: 10,
+                                            paddingRight: 10,
+                                            paddingBottom: ride.slug
                                                 ? Dimensions.get('window')
                                                       .width < 340
                                                     ? 0
                                                     : 30
                                                 : 30
-                                    }}
-                                >
-                                    {this.state.dataSource.distance !== '' &&
-                                    typeof this.state.dataSource.distance !==
-                                        'undefined' ? (
-                                        <Text
-                                            style={{
-                                                fontSize: 12,
-                                                color: 'white',
-                                                width: '100%',
-                                                fontWeight: 'bold',
-                                                marginTop: 12,
-                                                backgroundColor: 'black',
-                                                width: 'auto',
-                                                left: 10,
-                                                position: 'absolute',
-                                                paddingRight: 2,
-                                                paddingLeft: 2,
-                                                shadowColor: '#000',
-                                                shadowOffset: {
-                                                    width: 0,
-                                                    height: 5
-                                                },
-                                                shadowOpacity: 0.34,
-                                                shadowRadius: 6.27,
-
-                                                elevation: 15
-                                            }}
-                                        >
-                                            {this.state.dataSource.distance +
-                                                ' KM'}
-                                        </Text>
-                                    ) : null}
-                                    <Text
-                                        style={{
-                                            fontSize:
-                                                this.state.dataSource.slug
-                                                    .length > 35
-                                                    ? 18
-                                                    : 20,
-                                            marginTop: 28,
-                                            height: 25,
-                                            color: 'white',
-                                            fontWeight: 'bold',
-                                            textShadowColor:
-                                                'rgba(0, 0, 0, 0.4)',
-                                            textShadowOffset: {
-                                                width: -1,
-                                                height: 1
-                                            },
-                                            textShadowRadius: 10,
-                                            elevation: 22
                                         }}
                                     >
-                                        {this.state.dataSource.slug}
-                                    </Text>
-                                </LinearGradient>
-                            </Animatable.View>
+                                        {ride.open ? (
+                                            <Text
+                                                style={{
+                                                    fontSize: 14,
+                                                    color:
+                                                        ride.waitTime >= 30 &&
+                                                        ride.waitTime < 60
+                                                            ? 'orange'
+                                                            : this.state
+                                                                  .dataSource
+                                                                  .waitTime >=
+                                                              60
+                                                            ? 'red'
+                                                            : 'green',
+                                                    width: 'auto',
+                                                    fontWeight: 'bold',
+                                                    marginTop:
+                                                        !ride.open &&
+                                                        !ride._description.nl
+                                                            ? 20
+                                                            : 10,
+                                                    backgroundColor: 'black',
+                                                    left: 10,
+                                                    position: 'absolute',
+                                                    paddingRight: 2,
+                                                    paddingLeft: 2,
+                                                    shadowColor: '#000',
+                                                    shadowOffset: {
+                                                        width: 0,
+                                                        height: 5
+                                                    },
+                                                    shadowOpacity: 0.34,
+                                                    shadowRadius: 6.27,
+                                                    elevation: 15
+                                                }}
+                                            >
+                                                {ride.waitTime
+                                                    ? ride.waitTime + ' min'
+                                                    : '- min'}
+                                            </Text>
+                                        ) : null}
+                                        <Text
+                                            style={{
+                                                fontSize: ride.slug
+                                                    ? ride.slug.length > 35
+                                                        ? 18
+                                                        : 20
+                                                    : 18,
+                                                marginTop:
+                                                    ride.open ||
+                                                    ride._secondaryText.nl
+                                                        ? 28
+                                                        : 42,
+                                                height: 25,
+                                                color: 'white',
+                                                fontWeight: 'bold',
+                                                textShadowColor:
+                                                    'rgba(0, 0, 0, 0.4)',
+                                                textShadowOffset: {
+                                                    width: -1,
+                                                    height: 1
+                                                },
+                                                textShadowRadius: 10,
+                                                elevation: 22
+                                            }}
+                                        >
+                                            {ride.slug}
+                                        </Text>
+                                        {ride._secondaryText.nl ? (
+                                            <Text
+                                                style={{
+                                                    fontSize:
+                                                        ride._secondaryText.nl
+                                                            .length > 40
+                                                            ? 12.5
+                                                            : 14,
+                                                    color: 'white',
+                                                    textShadowColor:
+                                                        'rgba(0, 0, 0, 0.4)',
+                                                    textShadowOffset: {
+                                                        width: -1,
+                                                        height: 1
+                                                    },
+                                                    textShadowRadius: 10,
+                                                    elevation: 22
+                                                }}
+                                            >
+                                                {ride._secondaryText.nl}
+                                            </Text>
+                                        ) : null}
+                                    </LinearGradient>
+                                </Animatable.View>
+                            </React.Fragment>
                         )}
                     >
                         <TriggeringView
@@ -540,13 +549,15 @@ export default class RideDetail extends React.Component {
                                 </Text>
                                 <HTMLView
                                     value={
-                                        '<div>' +
-                                        this.state.dataSource._description.nl +
+                                        '<h4 style="font-weight:bold;">' +
+                                        ride._tagline.nl +
+                                        '</h4><div>' +
+                                        ride._description.nl +
                                         '</div>'
                                     }
                                     stylesheet={styles}
                                 />
-                                {this.state.dataSource.area !== '' ? (
+                                {ride.area ? (
                                     <Text
                                         style={{
                                             fontSize: 15,
@@ -558,12 +569,15 @@ export default class RideDetail extends React.Component {
                                         Gebied
                                     </Text>
                                 ) : null}
-                                {this.state.dataSource.area != '' ? (
+                                {ride.area ? (
                                     <Text style={{ fontSize: 17 }}>
-                                        {this.state.dataSource.area}
+                                        {ride.area.charAt(0).toUpperCase() +
+                                            ride.area
+                                                .slice(1, ride.area.length)
+                                                .toLowerCase()}
                                     </Text>
                                 ) : null}
-                                {this.state.dataSource.Datum_Eind != '' ? (
+                                {ride._secondaryText.nl ? (
                                     <Text
                                         style={{
                                             fontSize: 15,
@@ -575,13 +589,9 @@ export default class RideDetail extends React.Component {
                                         Sluit
                                     </Text>
                                 ) : null}
-                                {this.state.dataSource._secondaryText.nl !=
-                                '' ? (
+                                {ride._secondaryText.nl ? (
                                     <Text style={{ fontSize: 17 }}>
-                                        {
-                                            this.state.dataSource._secondaryText
-                                                .nl
-                                        }
+                                        {ride._secondaryText.nl}
                                     </Text>
                                 ) : null}
                             </View>
@@ -644,3 +654,56 @@ const styles = StyleSheet.create({
         opacity: 0
     }
 });
+
+interface fullRideData {
+    open: boolean;
+    name: string;
+    poiId: string;
+    closing: string;
+    opening: string;
+    showTimes?: any; // geen idee wat dit is?
+    waitTime: number;
+    _secondaryText: string[];
+    _primaryText: string;
+    updatedRow: string;
+    poiNumber: number;
+    poiNumberWinter: number;
+    minAge: number;
+    maxAge: number;
+    minSize: number;
+    maxSize: number;
+    minSizeEscort: number;
+    tags: string[];
+    category: string;
+    slug: string;
+    slugWinter: string;
+    area: string;
+    parkMonitorReferenceName: string;
+    seasons: string[];
+    navigationEnabled: boolean;
+    navigationEnabledWinter: boolean;
+    attachedToNavigationGraph: boolean;
+    attachedToNavigationGraphWinter: boolean;
+    adminOnly: boolean;
+    id: number;
+    titleImageId: number;
+    titleImageWinterId: number;
+    createdAt: Date;
+    updatedAt: Date;
+    _title: string;
+    _titleWinter: string;
+    _tagline: string;
+    _taglineWinter: string;
+    _description: string;
+    _descriptionWinter: string;
+    _entrance: Object;
+    _entranceWinter: Object;
+    _exit: any;
+    _exitWinter: any;
+    _preferredDestinations: string[];
+    _preferredDestinationsWinter: string[];
+    titleImage: {
+        id: number;
+        url: string;
+    };
+}

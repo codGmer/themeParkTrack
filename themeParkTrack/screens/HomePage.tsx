@@ -61,11 +61,10 @@ export default class HomePage extends React.Component<
                         style={{
                             fontSize: 14,
                             color: item.open ? 'green' : 'red',
-                            width: '100%',
+                            width: 'auto',
                             fontWeight: 'bold',
                             marginTop: 10,
                             backgroundColor: 'black',
-                            width: 'auto',
                             left: 10,
                             position: 'absolute',
                             padding: 2,
@@ -119,11 +118,10 @@ export default class HomePage extends React.Component<
                                                 : item.waitTime >= 60
                                                 ? 'red'
                                                 : 'green',
-                                        width: '100%',
+                                        width: 'auto',
                                         fontWeight: 'bold',
                                         marginTop: 10,
                                         backgroundColor: 'black',
-                                        width: 'auto',
                                         left: 10,
                                         position: 'absolute',
                                         paddingRight: 2,
@@ -135,7 +133,6 @@ export default class HomePage extends React.Component<
                                         },
                                         shadowOpacity: 0.34,
                                         shadowRadius: 6.27,
-
                                         elevation: 15
                                     }}
                                 >
@@ -151,7 +148,10 @@ export default class HomePage extends React.Component<
                                             ? 18
                                             : 20
                                         : 18,
-                                    marginTop: 28,
+                                    marginTop:
+                                        item.open || item._secondaryText.nl
+                                            ? 28
+                                            : 42,
                                     height: 25,
                                     color: 'white',
                                     fontWeight: 'bold',
@@ -166,10 +166,13 @@ export default class HomePage extends React.Component<
                             >
                                 {item.slug}
                             </Text>
-                            {item._secondaryText !== null ? (
+                            {item._secondaryText.nl ? (
                                 <Text
                                     style={{
-                                        fontSize: 14,
+                                        fontSize:
+                                            item._secondaryText.nl.length > 40
+                                                ? 12.5
+                                                : 14,
                                         color: 'white',
                                         textShadowColor: 'rgba(0, 0, 0, 0.4)',
                                         textShadowOffset: {
@@ -228,10 +231,14 @@ export default class HomePage extends React.Component<
 
     render() {
         if (this.state.failed) {
-            return <Text>Er ging iets mis</Text>;
+            return (
+                <Text style={{ color: 'red', textAlign: 'center' }}>
+                    Er ging iets mis, controleer je internet
+                </Text>
+            );
         } else {
             return (
-                <View style={[styles.horizontal, styles.container]}>
+                <View style={styles.container}>
                     <FlatList
                         data={this.state.fullRideData}
                         renderItem={this.renderItem}
@@ -261,7 +268,6 @@ interface RideTimesInterface {
     showTimes?: any; // geen idee wat dit is?
     waitTime: number;
     updatedAt: string;
-    _secondaryText: string[];
     _primaryText: string;
     _secondaryText: string;
     createdAt: string;
@@ -320,8 +326,7 @@ interface fullRideData {
 const styles = StyleSheet.create({
     horizontal: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        padding: 10
+        justifyContent: 'space-around'
     },
     container: {
         flex: 1,
