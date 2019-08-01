@@ -161,7 +161,7 @@ export default class HomePage extends React.Component<
                             >
                                 {item.slug}
                             </Text>
-                            {item.messages !== null ? (
+                            {item._secondaryText !== null ? (
                                 <Text
                                     style={{
                                         fontSize: 14,
@@ -175,7 +175,7 @@ export default class HomePage extends React.Component<
                                         elevation: 22
                                     }}
                                 >
-                                    {item.messages.nl[0]}
+                                    {item._secondaryText.nl}
                                 </Text>
                             ) : null}
                         </LinearGradient>
@@ -232,7 +232,7 @@ interface RideTimesInterface {
     showTimes?: any; // geen idee wat dit is?
     waitTime: number;
     updatedAt: string;
-    messages: string[];
+    _secondaryText: string[];
     _primaryText: string;
     _secondaryText: string;
     createdAt: string;
