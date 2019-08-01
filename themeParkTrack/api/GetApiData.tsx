@@ -10,8 +10,11 @@ export default class GetApiData {
                 }
             }
         );
-
-        return (await response.json()) as RideTimesInterface[];
+        const list = (await response.json()) as RideTimesInterface[];
+        const sortedList = list.sort(function(a, b) {
+            return b.waitTime - a.waitTime;
+        });
+        return sortedList;
     }
 
     static async getRidesMetaData(): Promise<RideMetaData[]> {
@@ -25,7 +28,6 @@ export default class GetApiData {
                 }
             }
         );
-
         return (await response.json()) as RideMetaData[];
     }
 }
