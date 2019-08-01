@@ -6,7 +6,8 @@ import {
     FlatList,
     TouchableOpacity,
     ImageBackground,
-    Dimensions
+    Dimensions,
+    RefreshControl
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GetApiData from '../api/GetApiData';
@@ -16,6 +17,8 @@ export default class HomePage extends React.Component<
         rideTimes: RideTimesInterface[];
         rideMetaData: RideMetaData[];
         fullRideData: fullRideData[];
+        refreshing: boolean;
+        failed: boolean;
     }
 > {
     constructor(props) {
@@ -23,7 +26,9 @@ export default class HomePage extends React.Component<
         this.state = {
             rideTimes: [],
             rideMetaData: [],
-            fullRideData: []
+            fullRideData: [],
+            refreshing: false,
+            failed: false
         };
     }
 
@@ -31,7 +36,7 @@ export default class HomePage extends React.Component<
         return (
             <TouchableOpacity
                 id={item.id}
-                onPress={() => this._openDetails(item.id)}
+                onPress={() => this._openDetails({ id: item.id })}
                 activeOpacity={0.9}
                 style={{
                     flex: 1,
@@ -96,8 +101,7 @@ export default class HomePage extends React.Component<
                                 paddingLeft: 10,
                                 paddingRight: 10,
                                 paddingBottom:
-                                    item.Locatie !== '' ||
-                                    item.Plaatsnaam !== ''
+                                    item.slug !== ''
                                         ? Dimensions.get('window').width < 340
                                             ? 0
                                             : 30
@@ -109,7 +113,8 @@ export default class HomePage extends React.Component<
                                     style={{
                                         fontSize: 14,
                                         color:
-                                            item.waitTime >= 30
+                                            item.waitTime >= 30 &&
+                                            item.waitTime < 60
                                                 ? 'orange'
                                                 : item.waitTime >= 60
                                                 ? 'red'
@@ -186,40 +191,64 @@ export default class HomePage extends React.Component<
     };
 
     componentDidMount() {
-        this._getAPIData();
+        this._getAPIData(false);
     }
 
     _openDetails = id => {
         this.props.navigation.navigate('RideDetail', id);
     };
 
-    _getAPIData = async () => {
-        let rideTimes = await GetApiData.getRidesTime();
-        let rideMetaData = await GetApiData.getRidesMetaData();
-        await this.setState({ rideTimes, rideMetaData });
-        let fullRideData = [];
-        for (let i = 0; i < this.state.rideTimes.length; i++) {
-            fullRideData.push({
-                ...this.state.rideTimes[i],
-                ...this.state.rideMetaData.find(
-                    itmInner =>
-                        itmInner.id === parseInt(this.state.rideTimes[i].poiId)
-                )
-            });
+    _getAPIData = async (refreshing: boolean) => {
+        if (refreshing) {
+            this.setState({ refreshing });
         }
-        this.setState({ fullRideData });
+        try {
+            let rideTimes = await GetApiData.getRidesTime();
+            let rideMetaData = await GetApiData.getRidesMetaData();
+            await this.setState({ rideTimes, rideMetaData });
+            let fullRideData = [];
+            for (let i = 0; i < this.state.rideTimes.length; i++) {
+                fullRideData.push({
+                    ...this.state.rideTimes[i],
+                    ...this.state.rideMetaData.find(
+                        itmInner =>
+                            itmInner.id ===
+                            parseInt(this.state.rideTimes[i].poiId)
+                    )
+                });
+            }
+            this.setState({
+                fullRideData,
+                refreshing: false
+            });
+        } catch (e) {
+            this.setState({ failed: true });
+        }
     };
 
     render() {
-        return (
-            <View style={[styles.horizontal, styles.container]}>
-                <FlatList
-                    data={this.state.fullRideData}
-                    renderItem={this.renderItem}
-                    keyExtractor={(item, index) => item.poiId}
-                />
-            </View>
-        );
+        if (this.state.failed) {
+            return <Text>Er ging iets mis</Text>;
+        } else {
+            return (
+                <View style={[styles.horizontal, styles.container]}>
+                    <FlatList
+                        data={this.state.fullRideData}
+                        renderItem={this.renderItem}
+                        keyExtractor={(item, index) => item.poiId}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={this.state.refreshing}
+                                onRefresh={() => this._getAPIData(true)}
+                                tintColor="white"
+                                title="Sleep omlaag"
+                                titleColor="white"
+                            />
+                        }
+                    />
+                </View>
+            );
+        }
     }
 }
 

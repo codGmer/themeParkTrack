@@ -30,6 +30,42 @@ export default class GetApiData {
         );
         return (await response.json()) as RideMetaData[];
     }
+
+    static async getRidesTimeDetails(
+        id: number
+    ): Promise<RideTimesInterface[]> {
+        const response = await fetch(
+            'https://api.phlsys.de/api/signage-snapshots?compact=true&access_token=auiJJnDpbIWrqt2lJBnD8nV9pcBCIprCrCxaWettkBQWAjhDAHtDxXBbiJvCzkUf&loc=50.800353,6.879447',
+            {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        const itemList = (await response.json()) as RideTimesInterface[];
+        const itemDetail = itemList.filter(item => {
+            return parseInt(item.poiId) == id;
+        });
+        return itemDetail;
+    }
+
+    static async getRidesMetaDataDetails(id: number): Promise<RideMetaData[]> {
+        const response = await fetch(
+            'https://api.phlsys.de/api/pois/' +
+                id +
+                '?compact=true&access_token=auiJJnDpbIWrqt2lJBnD8nV9pcBCIprCrCxaWettkBQWAjhDAHtDxXBbiJvCzkUf`',
+            {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return (await response.json()) as RideMetaData[];
+    }
 }
 
 interface RideTimesInterface {

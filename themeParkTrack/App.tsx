@@ -12,6 +12,7 @@ import {
     createAppContainer
 } from 'react-navigation';
 import HomeScreen from './screens/HomePage';
+import RideDetail from './screens/RideDetail';
 
 export class App extends React.Component {
     constructor(props) {
@@ -38,13 +39,11 @@ export class App extends React.Component {
 
 const AppStack = createStackNavigator(
     {
-        Home: HomeScreen
+        Home: HomeScreen,
+        RideDetail: RideDetail
     },
     {
-        initialRouteName: 'Home',
-        defaultNavigationOptions: {
-            header: null
-        }
+        initialRouteName: 'Home'
     }
 );
 
