@@ -40,6 +40,7 @@ export default class RideDetail extends React.Component<
     };
     _isMounted = false;
     id;
+    navTitleView: any;
     constructor(props) {
         super(props);
         this.id = props.navigation.state.params.id;
@@ -73,7 +74,7 @@ export default class RideDetail extends React.Component<
                     });
                     this._getItemDetails(this.id);
                 } else {
-                    this.setState({ userLocation: '' });
+                    this.setState({ userLocation: [] });
                     this._getItemDetails(this.id);
                 }
             });
