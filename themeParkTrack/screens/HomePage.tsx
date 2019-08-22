@@ -33,6 +33,9 @@ export default class HomePage extends React.Component<
     }
 
     renderItem = ({ item }) => {
+        if(item._secondaryText == null){
+            item._secondaryText = '';
+        }
         return (
             <TouchableOpacity
                 id={item.id}
@@ -42,8 +45,7 @@ export default class HomePage extends React.Component<
                     flex: 1,
                     flexDirection: 'row',
                     marginBottom: 1,
-                    backgroundColor: 'black',
-                    underlayColor: 'black'
+                    backgroundColor: 'black'
                 }}
             >
                 <ImageBackground
