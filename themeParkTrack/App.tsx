@@ -1,18 +1,13 @@
 import React from 'react';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import {
-    StyleSheet,
-    Text,
-    View,
-    FlatList,
-    ActivityIndicator
-} from 'react-native';
-import {
-    createSwitchNavigator,
+    createDrawerNavigator,
     createStackNavigator,
     createAppContainer
 } from 'react-navigation';
 import HomeScreen from './screens/HomePage';
 import RideDetail from './screens/RideDetail';
+import HomeHistory from './screens/HomeHistory';
 
 export class App extends React.Component {
     constructor(props) {
@@ -37,7 +32,7 @@ export class App extends React.Component {
     }
 }
 
-const AppStack = createStackNavigator(
+const waitingTimeStack = createStackNavigator(
     {
         Home: HomeScreen,
         RideDetail: RideDetail
@@ -47,7 +42,21 @@ const AppStack = createStackNavigator(
     }
 );
 
-export default createAppContainer(AppStack);
+const historyStack = createStackNavigator(
+    {
+        HomeHistory: HomeHistory
+    },
+    {
+        initialRouteName: 'HomeHistory'
+    }
+);
+
+const DrawerStack = createDrawerNavigator({
+    'Huidige Wachttijden': waitingTimeStack,
+    Geschiedenis: historyStack
+});
+
+export default createAppContainer(DrawerStack);
 
 const styles = StyleSheet.create({
     horizontal: {
