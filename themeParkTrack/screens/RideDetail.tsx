@@ -340,6 +340,9 @@ export default class RideDetail extends React.Component<
                 </View>
             );
         } else {
+            if(ride._secondaryText == null){
+                ride._secondaryText = '';
+            }
             return (
                 <View style={styles.container}>
                     <HeaderImageScrollView
