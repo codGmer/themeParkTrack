@@ -66,6 +66,23 @@ export default class GetApiData {
         );
         return (await response.json()) as RideMetaData[];
     }
+
+    static async monthAvgWaitTime(
+        monthAvgWaitTime: number
+    ): Promise<RideMetaData[]> {
+        const response = await fetch(
+            'http://codgmer.ddns.net/api/monthAvgWaitTime?month=' +
+                monthAvgWaitTime,
+            {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return (await response.json()) as RideMetaData[];
+    }
 }
 
 interface RideTimesInterface {
