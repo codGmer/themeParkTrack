@@ -91,7 +91,7 @@ interface RideTimesInterface {
     poiId: string;
     closing: string;
     opening: string;
-    showTimes?: any; // geen idee wat dit is?
+    showTimes?: any;
     waitTime: number;
     updatedAt: string;
     messages: string[];
